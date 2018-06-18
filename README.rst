@@ -16,8 +16,8 @@ Features
 - Detect the source tree root automatically.
 - Create binary trees for building automatically.
 - Link compilation database ``compile_commands.json`` automatically.
-- Automatically pass some common used variables to cmake,
-  such as ``-DCMAKE_BUILD_TYPE=Debug`` . As long as any additional variables.
+- Automatically pass some common used options to cmake,
+  such as ``-DCMAKE_BUILD_TYPE=Debug`` . As long as any additional options.
 
 uCmake.vim needs vim with ``+job`` feature, to run cmake asynchronously.
 It is such a common requirement in nowadays.
@@ -75,7 +75,7 @@ uCMake.vim provides options to tweek its behavior:
 
 ``g:ucmake_binary_directory``
   A string specifying where the binary tree(s) located.
-  Sepcial variables in it are allowed.
+  Sepcial macros in it are allowed.
   The default value is ``../build_{project_name}_{buildtype}`` .
   Available values could be:
 
@@ -84,7 +84,7 @@ uCMake.vim provides options to tweek its behavior:
   - ``/path/to/build-tree`` absolute path.
   - ``../build-tree`` relative path to the source tree root.
     Not relative to the current working directory.
-  - ``../build-{project_name}-{build_type}`` path with variables,
+  - ``../build-{project_name}-{build_type}`` path with macros,
     either absolute or relative are both ok.
     Only ``{project_name}`` and ``{buildtype}`` are supported now.
 
