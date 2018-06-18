@@ -64,7 +64,7 @@ uCMake.vim provides options to tweek its behavior:
 
 ``g:ucmake_active_config_types``
   A string list specifying all active configuration types to be generated.
-  The defult value is ``['']`` .
+  The defult value is ``['Debug']`` .
   Another sample for multi-config could be: ``['Release', 'Debug']`` .
 
   Always keep items in this list unique.

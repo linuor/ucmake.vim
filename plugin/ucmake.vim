@@ -23,7 +23,7 @@ if !exists("g:ucmake_cmakelists_file") || g:ucmake_cmakelists_file ==# ''
     let g:ucmake_cmakelists_file='CMakeLists.txt'
 endif
 if !exists("g:ucmake_active_config_types")
-    let g:ucmake_active_config_types = ['Relese', 'Debug']
+    let g:ucmake_active_config_types = ['Debug']
 endif
 if !exists("g:ucmake_enable_link_compilation_database")
     let g:ucmake_enable_link_compilation_database = 'ON'
