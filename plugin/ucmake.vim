@@ -44,11 +44,11 @@ if !exists("g:ucmake_cache_entries")
 endif
 
 function! s:shellslash(path) abort
-  if &shell =~? 'cmd' || exists('+shellslash') && !&shellslash
-    return tr(a:path, '\', '/')
-  else
-    return a:path
-  endif
+    if &shell =~? 'cmd' || exists('+shellslash') && !&shellslash
+        return tr(a:path, '\', '/')
+    else
+        return a:path
+    endif
 endfunction
 
 function! s:find_symbolic(sym, path)
