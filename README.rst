@@ -39,8 +39,6 @@ uCMake.vim provides several commands to make it easier to use cmake in vim:
   Additional make options such as ``-j4`` could be appended directly, 
   such as ``:Amake test -j4`` .
 
-Notice that don't run the commands on buffers not belongs to any source tree.
-
 *******
 Options
 *******
@@ -77,25 +75,25 @@ uCMake.vim provides options to tweek its behavior:
   The default value is ``../build_{project_name}_{buildtype}`` .
   Available values could be:
 
-    - ``{source_tree_root}`` or empty, means the source tree root.
-      This will result building in source tree.
-    - ``/path/to/build-tree`` absolute path.
-    - ``../build-tree`` relative path to the source tree root.
-      Not relative to the current working directory.
-    - ``../build-{project_name}-{build_type}`` path with variables,
-      either absolute or relative are both ok.
-      Only ``{project_name}`` and ``{buildtype}`` are supported now.
+  - ``{source_tree_root}`` or empty, means the source tree root.
+    This will result building in source tree.
+  - ``/path/to/build-tree`` absolute path.
+  - ``../build-tree`` relative path to the source tree root.
+    Not relative to the current working directory.
+  - ``../build-{project_name}-{build_type}`` path with variables,
+    either absolute or relative are both ok.
+    Only ``{project_name}`` and ``{buildtype}`` are supported now.
 
-    For path without ``{buildtype}`` variable in it,
-    additional sub-directory will be created,
-    while multi-config types are provided in ``g:ucmake_active_config_types`` .
+  For path without ``{buildtype}`` variable in it,
+  additional sub-directory will be created,
+  while multi-config types are provided in ``g:ucmake_active_config_types`` .
 
-    For example, if ``g:ucmake_active_config_types=['Release', 'Debug']`` ,
-    and ``g:ucmake_binary_directory='/path/to/build'`` ,
-    two sub-directory will be created in ``/path/to/build`` , they are:
-    
-    - ``/path/to/build/Release``
-    - ``/path/to/build/Debug``
+  For example, if ``g:ucmake_active_config_types=['Release', 'Debug']`` ,
+  and ``g:ucmake_binary_directory='/path/to/build'`` ,
+  two sub-directory will be created in ``/path/to/build`` , they are:
+  
+  - ``/path/to/build/Release``
+  - ``/path/to/build/Debug``
 
 ``g:ucmake_compilation_database_link_target``
   A string specifying the location where the compilation database link to.
