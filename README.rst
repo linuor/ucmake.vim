@@ -11,12 +11,16 @@ Features
 ********
 
 - Asynchronously configuration and compilation.
-- Simulate multi-config generator for different build types.
+- Multi-config support for different build types.
+- Multi-project support, no interfering with each other.
 - Detect the source tree root automatically.
 - Create binary trees for building automatically.
 - Link compilation database ``compile_commands.json`` automatically.
 - Automatically pass some common used variables to cmake,
   such as ``-DCMAKE_BUILD_TYPE=Debug`` . As long as any additional variables.
+
+uCmake.vim needs vim with ``+job`` feature, to run cmake asynchronously.
+It is such a common requirement in nowadays.
 
 *****
 Usage
@@ -132,6 +136,16 @@ which will be replace with their own values when applied. They are:
 - ``{project_name}`` the directory name of the source tree root.
 - ``{build_type}`` the build type about to use.
 - ``{top_cmakelists}`` the full path of the top most ``CMakeLists.txt`` file.
+
+************
+Installation
+************
+
+Any vim package manager plugin can easily install uCmake.vim,
+just use your favorite one, and import uCmake.vim as your other packages do.
+
+You can also use the the built-in ``:packadd`` command to install manually. 
+It is not so difficult.
 
 ***************
 TODOs and DONEs
