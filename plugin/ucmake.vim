@@ -111,7 +111,7 @@ function! UcmakeDetect(path) abort
                     \   g:ucmake_binary_directory)
     endif
     if len(g:ucmake_active_config_types) > 1 && match(p, '{build_type}') == -1
-        let p += '{build_type}'
+        let p .= '{build_type}'
     endif
     let b:ucmake_binary_dir = s:apply_buffer_macro(p)
     let b:ucmake_compile_commands =

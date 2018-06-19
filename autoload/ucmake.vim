@@ -142,10 +142,9 @@ function! s:cmake_config(args) abort
         call s:set_all_ctx(typ)
         let s:jobs[typ]['file'] = outfile
         let cm = s:normalize_cmd(cm)
-        let s:jobs[typ]['job'] = job_start(cm, {'exit_cb': 'UcmakeFinish',
-                    \ 'out_io': 'file',
-                    \ 'err_io': 'out', 'out_name': outfile,
-                    \ 'cwd': bindir})
+        let s:jobs[typ]['job'] = job_start(cm, {"exit_cb": 'UcmakeFinish',
+                    \ "out_io": "file", "err_io": "out", "out_name": outfile,
+                    \ "cwd": bindir})
         echomsg 'uCMake: generating with type of "'. typ . '" ...'
     endfor
 endfunction
