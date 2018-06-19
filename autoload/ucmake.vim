@@ -99,7 +99,7 @@ function! s:link_compilation_database() abort
     endif
 endfunction
 
-function! UcmakeFinish(job, code) abort
+function! UcmakeExitCb(job, code) abort
     for key in keys(s:jobs)
         if a:job is s:get_ctx(key, 'job')
             if g:ucmake_enable_link_compilation_database &&
@@ -113,7 +113,7 @@ function! UcmakeFinish(job, code) abort
     endfor
 endfunction
 
-function! s:cmake_config(args) abort
+function! ucmake#CmakeConfig(args) abort
     if len(s:jobs) > 0
         echomsg 'uCMake: CMake is still running, please wait.'
         return
@@ -138,18 +138,19 @@ function! s:cmake_config(args) abort
         let bindir = s:apply_type_macro(b:ucmake_binary_dir, typ)
         call s:make_dir(bindir)
         let cm += ['"-B' . bindir . '"']
-        let outfile = tempname()
-        call s:set_all_ctx(typ)
-        let s:jobs[typ]['file'] = outfile
         let cm = s:normalize_cmd(cm)
-        let s:jobs[typ]['job'] = job_start(cm, {"exit_cb": 'UcmakeFinish',
+        call s:set_all_ctx(typ)
+        let outfile = tempname()
+        let s:jobs[typ]['file'] = outfile
+        let s:jobs[typ]['job'] = job_start(cm,
+                    \ {"exit_cb": 'UcmakeExitCb',
                     \ "out_io": "file", "err_io": "out", "out_name": outfile,
                     \ "cwd": bindir})
         echomsg 'uCMake: generating with type of "'. typ . '" ...'
     endfor
 endfunction
 
-function! s:cmake_compile(args) abort
+function! ucmake#CmakeCompile(args) abort
     if len(s:jobs) > 0
         echomsg 'uCMake: CMake is still running, please wait.'
         return
@@ -162,27 +163,16 @@ function! s:cmake_compile(args) abort
             let prg += ["--"]
             let prg += split(a:args)
         endif
-        let outfile = tempname()
-        call s:set_all_ctx(typ)
-        let s:jobs[typ]['file'] = outfile
         let prg = s:normalize_cmd(prg)
-        let s:jobs[typ]['job'] = job_start(prg, {'exit_cb': 'UcmakeFinish',
+        call s:set_all_ctx(typ)
+        let outfile = tempname()
+        let s:jobs[typ]['file'] = outfile
+        let s:jobs[typ]['job'] = job_start(prg,
+                    \ {'exit_cb': 'UcmakeExitCb',
                     \ 'out_io': 'file',
                     \ 'err_io': 'out', 'out_name': outfile,
                     \ 'cwd': bindir})
         echomsg 'uCMake: compling with type of "'. typ . '"...'
     endfor
-endfunction
-
-function! s:setup_commands() abort
-    command! -nargs=* -buffer Cmake :call s:cmake_config(<q-args>)
-    command! -nargs=* -buffer Amake :call s:cmake_compile(<q-args>)
-    let bindir =s:apply_type_macro(b:ucmake_binary_dir,
-                \ g:ucmake_active_config_types[0])
-    let &makeprg = g:ucmake_cmake_prg . ' --build ' . bindir
-endfunction
-
-function! ucmake#Init(path) abort
-    call s:setup_commands()
 endfunction
 

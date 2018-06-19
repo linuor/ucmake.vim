@@ -67,7 +67,7 @@ function! s:apply_buffer_macro(string) abort
     return substitute(p, '{top_cmakelists}', b:ucmake_top_cmakelists, 'g')
 endfunction
 
-function! UcmakeDetect(path) abort
+function! s:setup(path) abort
     let path = s:shellslash(a:path)
     if isdirectory(path)
         let path = fnamemodify(path, ':p:s?/$??')
@@ -103,7 +103,6 @@ function! UcmakeDetect(path) abort
     else
         let b:ucmake_top_cmakelists = getcwd() . '/' . top
     endif
-    let p = ''
     if g:ucmake_binary_directory =~ '^[/\\]'
         let p = simplify(g:ucmake_binary_directory)
     else
@@ -116,16 +115,21 @@ function! UcmakeDetect(path) abort
     let b:ucmake_binary_dir = s:apply_buffer_macro(p)
     let b:ucmake_compile_commands =
             \ s:apply_buffer_macro(g:ucmake_compilation_database_link_target)
-    return ucmake#Init(path)
+
+    command! -nargs=* -buffer Cmake :call ucmake#CmakeConfig(<q-args>)
+    command! -nargs=* -buffer Amake :call ucmake#CmakeCompile(<q-args>)
+    let &makeprg = g:ucmake_cmake_prg . ' --build ' .
+            \ substitute(b:ucmake_binary_dir, '{build_type}',
+            \ g:ucmake_active_config_types[0], 'g') . ' --'
 endfunction
 
 augroup ucmake
     autocmd!
-    autocmd BufNewFile,BufReadPost * call UcmakeDetect(expand('%:p'))
+    autocmd BufNewFile,BufReadPost * call s:setup(expand('%:p'))
     autocmd FileType netrw 
-            \ call UcmakeDetect(fnamemodify(get(b:, 'netrw_curdir', @%), ':p'))
+            \ call s:setup(fnamemodify(get(b:, 'netrw_curdir', @%), ':p'))
     autocmd VimEnter *
-            \ if expand('<amatch>')==''|call UcmakeDetect(getcwd())|endif
-    autocmd CmdWinEnter * call UcmakeDetect(expand('#:p'))
+            \ if expand('<amatch>')==''|call s:setup(getcwd())|endif
+    autocmd CmdWinEnter * call s:setup(expand('#:p'))
 augroup END
 

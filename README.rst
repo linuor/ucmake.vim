@@ -29,19 +29,19 @@ Usage
 uCMake.vim provides several commands to make it easier to use cmake in vim:
 
 ``:Cmake``
-  For running configuration. Any additional cmake options can be appended to the
-  commandline.
-
-``:make``
-  For compilation. It is the original built-in command.
-  In the case of multi-config, it only applies to the first one.
-  Additional make options such as ``-j4`` should be appended after a ``--`` ,
-  just like this: ``:make -- test -j4`` .
+  For running configuration for all active config types.
+  Any additional cmake options can be appended to the command.
 
 ``:Amake``
-  Asynchronously acts as ``:make`` , and applies to all the configuration types.
+  For running compilation for all active config types.
   Additional make options such as ``-j4`` could be appended directly, 
   such as ``:Amake test -j4`` .
+
+``:make``
+  It is just the original built-in command for compilation.
+  In the case of multi-config, it only applies to the first one.
+  Additional make options such as ``-j4`` should be appended directly,
+  such as ``:make test -j4`` .
 
 *******
 Options
@@ -161,9 +161,4 @@ TODOs
 
 - vim documentation.
 - cmake server.
-
-BUGs
-====
-
-- ``job_start()`` inconsistent in the form of command, and ``cwd`` option.
 
