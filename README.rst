@@ -88,9 +88,9 @@ uCMake.vim provides options to tweek its behavior:
     either absolute or relative are both ok.
     Only ``{project_name}`` and ``{buildtype}`` are supported now.
 
-  For path without ``{buildtype}`` variable in it,
-  additional sub-directory will be created,
-  while multi-config types are provided in ``g:ucmake_active_config_types`` .
+  If multi-config types are provided in ``g:ucmake_active_config_types`` ,
+  but no ``{buildtype}`` macro in ``g:ucmake_binary_directory`` ,
+  then the build type macro will be appended to the build target directly.
 
   For example, if ``g:ucmake_active_config_types=['Release', 'Debug']`` ,
   and ``g:ucmake_binary_directory='/path/to/build'`` ,

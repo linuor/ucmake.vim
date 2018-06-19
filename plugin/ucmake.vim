@@ -110,6 +110,9 @@ function! UcmakeDetect(path) abort
         let p = simplify(b:ucmake_source_tree_root . '/' .
                     \   g:ucmake_binary_directory)
     endif
+    if len(g:ucmake_active_config_types) > 1 && match(p, '{build_type}') == -1
+        let p += '{build_type}'
+    endif
     let b:ucmake_binary_dir = s:apply_buffer_macro(p)
     let b:ucmake_compile_commands =
             \ s:apply_buffer_macro(g:ucmake_compilation_database_link_target)
