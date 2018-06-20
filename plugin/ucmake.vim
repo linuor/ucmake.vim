@@ -7,7 +7,7 @@ if exists("g:ucmake_has_loaded")
     finish
 endif
 if !has("file_in_path") || !has("job")
-    echomsg 'uCMake: +file_in_path, +job are all required'
+    echomsg 'uCMake: +file_in_path, +job are required'
     finish
 endif
 let g:ucmake_has_loaded=1
