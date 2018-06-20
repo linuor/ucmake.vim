@@ -9,7 +9,7 @@ endif
 let g:cmake_has_autoloaded = 1
 
 let s:step_config = "Config"
-let s:stop_compile = "Compile"
+let s:step_compile = "Compile"
 let s:jobs = {}
 
 function! s:set_ctx(id, key, value) abort
@@ -166,7 +166,7 @@ function! ucmake#CmakeCompile(args) abort
                         \ ' with type of ' . typ . ', please wait.'
             return
         endif
-        call s:set_cex(job_id, 'step', s:step_compile)
+        call s:set_ctx(job_id, 'step', s:step_compile)
         let prg = ['"' . g:ucmake_cmake_prg . '"']
         let bindir = s:apply_type_macro(b:ucmake_binary_dir, typ)
         let prg += ["--build" , '"' . bindir . '"']
