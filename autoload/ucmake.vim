@@ -8,6 +8,8 @@ if exists('g:cmake_has_autoloaded')
 endif
 let g:cmake_has_autoloaded = 1
 
+let s:step_config = "Config"
+let s:stop_compile = "Compile"
 let s:jobs = {}
 
 function! s:set_ctx(id, key, value) abort
@@ -26,15 +28,11 @@ function! s:set_all_ctx(id) abort
 endfunction
 
 function! s:get_ctx(id, key) abort
-    if !exists("s:jobs[a:id]")
-        echoerr "uCMake: undefined id in context[" . a:id . "]"
-        return
-    endif
-    if !exists("s:jobs[a:id][a:key]")
-        echoerr "uCMake: undefined key in context[" . a:id ."][" . a:key . "]"
-        return
-    endif
     return s:jobs[a:id][a:key]
+endfunction
+
+function! s:get_jobid(project, type) abort
+    return 'uCMake:' . a:project . '-' . a:type
 endfunction
 
 function! s:normalize_cmd(lst) abort
@@ -99,30 +97,36 @@ function! s:link_compilation_database() abort
     endif
 endfunction
 
-function! UcmakeExitCb(job, code) abort
+function! s:exit_cb(job, code) abort
     for key in keys(s:jobs)
         if a:job is s:get_ctx(key, 'job')
-            if g:ucmake_enable_link_compilation_database &&
+            if s:get_ctx(key, 'step') ==# s:step_config &&
+                        \ g:ucmake_enable_link_compilation_database &&
                         \ key ==# g:ucmake_active_config_types[0]
                 call s:link_compilation_database()
             endif
-            execute 'cfile! ' . s:get_ctx(key, 'file')
+            let out = s:get_ctx(key, 'outfile')
+            execute 'cfile ' . out
             unlet s:jobs[key]
-            echomsg 'uCMake: finish job with type of "' . key . '"'
+            echomsg 'uCMake: finish job ' . key
         endif
     endfor
 endfunction
 
 function! ucmake#CmakeConfig(args) abort
-    if len(s:jobs) > 0
-        echomsg 'uCMake: CMake is still running, please wait.'
-        return
-    endif
     let prg = ['"' . g:ucmake_cmake_prg . '"']
     for key in keys(g:ucmake_cache_entries)
         let prg += ['"-D' . key . '=' . g:ucmake_cache_entries[key] . '"']
     endfor
     for typ in g:ucmake_active_config_types
+        let job_id = s:get_jobid(b:ucmake_project_name, typ)
+        if exists("s:jobs[job_id]")
+            echomsg 'uCMake: CMake is still running for ' .
+                        \ b:ucmake_project_name .
+                        \ ' with type of ' . typ . ', please wait.'
+            return
+        endif
+        call s:set_ctx(job_id, 'step', s:step_config)
         let cm = deepcopy(prg)
         if typ !=# ''
             let cm += ["'-DCMAKE_BUILD_TYPE:String=" . typ . "'"]
@@ -139,23 +143,30 @@ function! ucmake#CmakeConfig(args) abort
         call s:make_dir(bindir)
         let cm += ['"-B' . bindir . '"']
         let cm = s:normalize_cmd(cm)
-        call s:set_all_ctx(typ)
         let outfile = tempname()
-        let s:jobs[typ]['file'] = outfile
-        let s:jobs[typ]['job'] = job_start(cm,
-                    \ {"exit_cb": 'UcmakeExitCb',
-                    \ "out_io": "file", "err_io": "out", "out_name": outfile,
-                    \ "cwd": bindir})
-        echomsg 'uCMake: generating with type of "'. typ . '" ...'
+        call s:set_all_ctx(job_id)
+        call s:set_ctx(job_id, 'outfile', outfile)
+        let opt = {"exit_cb": function('s:exit_cb'),
+                    \ "in_io": "null",
+                    \ "out_io": "file", "out_name": outfile,
+                    \ "err_io": "file", "err_name": outfile,
+                    \ "cwd": bindir}
+        call s:set_ctx(job_id, 'job', job_start(cm, opt))
+        echomsg 'uCMake: generating ' . b:ucmake_project_name .
+                    \ ' with type of "'. typ . '" ...'
     endfor
 endfunction
 
 function! ucmake#CmakeCompile(args) abort
-    if len(s:jobs) > 0
-        echomsg 'uCMake: CMake is still running, please wait.'
-        return
-    endif
     for typ in g:ucmake_active_config_types
+        let job_id = s:get_jobid(b:ucmake_project_name, typ)
+        if exists("s:jobs[job_id]")
+            echomsg 'uCMake: CMake is still running for ' .
+                        \ b:ucmake_project_name .
+                        \ ' with type of ' . typ . ', please wait.'
+            return
+        endif
+        call s:set_cex(job_id, 'step', s:step_compile)
         let prg = ['"' . g:ucmake_cmake_prg . '"']
         let bindir = s:apply_type_macro(b:ucmake_binary_dir, typ)
         let prg += ["--build" , '"' . bindir . '"']
@@ -164,15 +175,17 @@ function! ucmake#CmakeCompile(args) abort
             let prg += split(a:args)
         endif
         let prg = s:normalize_cmd(prg)
-        call s:set_all_ctx(typ)
         let outfile = tempname()
-        let s:jobs[typ]['file'] = outfile
-        let s:jobs[typ]['job'] = job_start(prg,
-                    \ {'exit_cb': 'UcmakeExitCb',
-                    \ 'out_io': 'file',
-                    \ 'err_io': 'out', 'out_name': outfile,
-                    \ 'cwd': bindir})
-        echomsg 'uCMake: compling with type of "'. typ . '"...'
+        call s:set_all_ctx(job_id)
+        call s:set_ctx(job_id, 'outfile', outfile)
+        let opt = {"exit_cb": function('s:exit_cb'),
+                    \ "in_io": "null",
+                    \ "out_io": "file", "out_name": outfile,
+                    \ "err_io": "file", "err_name": outfile,
+                    \ "cwd": bindir}
+        call s:set_ctx(job_id, 'job', job_start(prg, opt))
+        echomsg 'uCMake: compling ' . b:ucmake_project_name.
+                    \ 'with type of "'. typ . '"...'
     endfor
 endfunction
 

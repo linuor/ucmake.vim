@@ -109,7 +109,9 @@ function! s:setup(path) abort
         let p = simplify(b:ucmake_source_tree_root . '/' .
                     \   g:ucmake_binary_directory)
     endif
-    if len(g:ucmake_active_config_types) > 1 && match(p, '{build_type}') == -1
+    if type(g:ucmake_active_config_types) == v:t_list &&
+                \ len(g:ucmake_active_config_types) > 1 &&
+                \ match(p, '{build_type}') == -1
         let p .= '{build_type}'
     endif
     let b:ucmake_binary_dir = s:apply_buffer_macro(p)
