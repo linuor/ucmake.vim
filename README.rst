@@ -86,7 +86,6 @@ uCMake.vim provides options to tweek its behavior:
     Not relative to the current working directory.
   - ``../build-{project_name}-{build_type}`` path with macros,
     either absolute or relative are both ok.
-    Only ``{project_name}`` and ``{buildtype}`` are supported now.
 
   If multi-config types are provided in ``g:ucmake_active_config_types`` ,
   but no ``{buildtype}`` macro in ``g:ucmake_binary_directory`` ,
@@ -147,18 +146,12 @@ just use your favorite one, and import uCmake.vim as your other packages do.
 You can also use the the built-in ``:packadd`` command to install manually. 
 It is not so difficult.
 
-***************
-TODOs and DONEs
-***************
-
-DONEs
-=====
-
-- First release.
-
+*****
 TODOs
-=====
+*****
 
 - vim documentation.
 - cmake server.
+- remove ``{source_tree_root}`` and ``{top_cmakelists}`` , useless
+- fix the fail set cwd in ``job_start()`` for cmake
 
