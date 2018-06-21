@@ -136,7 +136,6 @@ function! s:exit_cb(job, code) abort
                         \ key ==# g:ucmake_active_config_types[0]
                 call s:link_compilation_database()
             endif
-            copen
             unlet s:ctx[key]
             call s:msg('Finish job', key, step)
         endif
@@ -184,6 +183,9 @@ function! ucmake#CmakeConfig(args) abort
         if isfail != 'fail'
             call setqflist([], ' ', {'title': '[uCMake]' . job_id . ': ' .
                         \ s:step_config})
+            if (g:ucmake_open_quickfix_window)
+                copen
+            endif
             let id = getqflist({'id': 0}).id
             call s:set_ctx(job_id, 'job', j)
             call s:set_ctx(job_id, 'qfid', id)
@@ -224,6 +226,10 @@ function! ucmake#CmakeCompile(args) abort
         if isfail != 'fail'
             call setqflist([], ' ', {'title': '[uCMake]' . job_id . ': ' .
                         \ s:step_compile})
+            if (g:ucmake_open_quickfix_window)
+                copen
+            endif
+            let id = getqflist({'id': 0}).id
             let id = getqflist({'id': 0}).id
             call s:set_ctx(job_id, 'job', j)
             call s:set_ctx(job_id, 'qfid', id)

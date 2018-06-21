@@ -12,6 +12,9 @@ if !has("file_in_path") || !has("job")
 endif
 let g:ucmake_has_loaded=1
 
+if !exists("g:ucmake_open_quickfix_window")
+    let g:ucmake_open_quickfix_window = 1
+endif
 if !exists("g:ucmake_cmake_prg") || g:ucmake_cmake_prg ==# ''
     let g:ucmake_cmake_prg = 'cmake'
 endif

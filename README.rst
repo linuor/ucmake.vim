@@ -53,6 +53,12 @@ Options
 
 uCMake.vim provides options to tweek its behavior:
 
+``g:ucmake_open_quickfix_window``
+  ``1`` enable to open quickfix windows for commands output.
+  This is the default value. While ``0`` is disabled to.
+
+  This option has no nothing to do with the built-in ``:make`` command.
+
 ``g:ucmake_cmakelists_file``
   A string of the cmake lists file name,
   used to detect the top most cmake list file.
