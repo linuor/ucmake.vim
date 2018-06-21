@@ -8,8 +8,8 @@ if exists('g:cmake_has_autoloaded')
 endif
 let g:cmake_has_autoloaded = 1
 
-let s:step_config = "Config"
-let s:step_compile = "Compile"
+let s:phase_config = "Config"
+let s:phase_compile = "Compile"
 let s:ctx = {}
 
 function! s:set_ctx(id, key, value) abort
@@ -19,7 +19,7 @@ function! s:set_ctx(id, key, value) abort
     let s:ctx[a:id][a:key] = a:value
 endfunction
 
-function! s:set_all_ctx(id) abort
+function! s:set_buffer_ctx(id) abort
     call s:set_ctx(a:id, 'source_tree_root', b:ucmake_source_tree_root)
     call s:set_ctx(a:id, 'project_name', b:ucmake_project_name)
     call s:set_ctx(a:id, 'top_cmakelists', b:ucmake_top_cmakelists)
@@ -32,9 +32,10 @@ function! s:get_ctx(id, key) abort
 endfunction
 
 function! s:get_jobid(project, type) abort
-    return a:project . '-' . a:type
+    return a:project . '(' . a:type .')'
 endfunction
 
+" TODO remove, unused
 function! s:msg(msg, ...) abort
     echomsg 'uCmake: ' . a:msg . ' ' . join(a:000)
 endfunction
@@ -121,7 +122,8 @@ function! s:callback(ch, txt) abort
     for key in keys(s:ctx)
         if job is s:get_ctx(key, 'job')
             let id = s:get_ctx(key, 'qfid')
-            call setqflist([], 'a', {'id': id, 'items': [{'text': a:txt}]})
+            call setqflist([], 'a', {'id': id, 'lines': [a:txt]})
+            cbottom
             break
         endif
     endfor
@@ -130,16 +132,48 @@ endfunction
 function! s:exit_cb(job, code) abort
     for key in keys(s:ctx)
         if a:job is s:get_ctx(key, 'job')
-            let step = s:get_ctx(key, 'step')
-            if step ==# s:step_config &&
+            let phase = s:get_ctx(key, 'phase')
+            if phase ==# s:phase_config &&
                         \ g:ucmake_enable_link_compilation_database &&
                         \ key ==# g:ucmake_active_config_types[0]
                 call s:link_compilation_database()
             endif
+            call setqflist([], 'a', {'id': s:get_ctx(key, 'qfid'), 'items':
+                        \ [{'text': 'Job exited with code ' . a:code}]})
+            cbottom
             unlet s:ctx[key]
-            call s:msg('Finish job', key, step)
         endif
     endfor
+endfunction
+
+function! s:run(job_id, prg, phase, cwd) abort
+    let cm = s:normalize_cmd(a:prg)
+    call s:set_buffer_ctx(a:job_id)
+    call s:set_ctx(a:job_id, 'phase', a:phase)
+    let opt = {"callback": function('s:callback'),
+                \ "exit_cb": function('s:exit_cb'),
+                \ "in_io": "null",
+                \ "out_io": "pipe", "out_mode": "nl",
+                \ "err_io": "out", "err_mode": "nl",
+                \ "cwd": a:cwd}
+    call setqflist([], ' ', {'title': '[uCMake]' . a:job_id . ': ' .
+                \ a:phase})
+    let id = getqflist({'id': 0}).id
+    call s:set_ctx(a:job_id, 'qfid', id)
+    if (g:ucmake_open_quickfix_window)
+        copen
+    endif
+    call setqflist([{'text':
+        \ a:phase .' '. a:job_id . ' ...'}, {'text': join(deepcopy(cm))}], 'a')
+    let j = job_start(cm, opt)
+    let isfail = job_status(j)
+    if isfail != 'fail'
+        call s:set_ctx(a:job_id, 'job', j)
+    else
+        call setqflist([], 'a', {'id':id, {'items':
+                    \ [{'text': 'Fail to start job.'}]}})
+        unlet s:ctx[a:job_id]
+    endif
 endfunction
 
 function! ucmake#CmakeConfig(args) abort
@@ -152,9 +186,8 @@ function! ucmake#CmakeConfig(args) abort
         if exists("s:ctx[job_id]")
             call s:warning('CMake is still running for', b:ucmake_project_name,
                         \ 'with type of "' . typ . '", please wait.')
-            return
+            continue
         endif
-        call s:set_ctx(job_id, 'step', s:step_config)
         let cm = deepcopy(prg)
         if typ !=# ''
             let cm += ["'-DCMAKE_BUILD_TYPE:String=" . typ . "'"]
@@ -170,30 +203,7 @@ function! ucmake#CmakeConfig(args) abort
         let bindir = s:apply_type_macro(b:ucmake_binary_dir, typ)
         call s:make_dir(bindir)
         let cm += ['"-B' . bindir . '"']
-        let cm = s:normalize_cmd(cm)
-        call s:set_all_ctx(job_id)
-        let opt = {"callback": function('s:callback'),
-                    \ "exit_cb": function('s:exit_cb'),
-                    \ "in_io": "null",
-                    \ "out_io": "pipe", "out_mode": "nl",
-                    \ "err_io": "out", "err_mode": "nl",
-                    \ "cwd": bindir}
-        let j = job_start(cm, opt)
-        let isfail = job_status(j)
-        if isfail != 'fail'
-            call setqflist([], ' ', {'title': '[uCMake]' . job_id . ': ' .
-                        \ s:step_config})
-            if (g:ucmake_open_quickfix_window)
-                copen
-            endif
-            let id = getqflist({'id': 0}).id
-            call s:set_ctx(job_id, 'job', j)
-            call s:set_ctx(job_id, 'qfid', id)
-            call s:msg('Generating', b:ucmake_project_name,
-                        \ ' with type of "' . typ . '" ...')
-        else
-            unlet s:ctx[job_id]
-        endif
+        call s:run(job_id, cm, s:phase_config, bindir)
     endfor
 endfunction
 
@@ -205,7 +215,6 @@ function! ucmake#CmakeCompile(args) abort
                         \ ' with type of "' . typ . '", please wait.')
             return
         endif
-        call s:set_ctx(job_id, 'step', s:step_compile)
         let prg = ['"' . g:ucmake_cmake_prg . '"']
         let bindir = s:apply_type_macro(b:ucmake_binary_dir, typ)
         let prg += ["--build" , '"' . bindir . '"']
@@ -213,31 +222,7 @@ function! ucmake#CmakeCompile(args) abort
             let prg += ["--"]
             let prg += split(a:args)
         endif
-        let prg = s:normalize_cmd(prg)
-        call s:set_all_ctx(job_id)
-        let opt = {"callback": function('s:callback'),
-                    \ "exit_cb": function('s:exit_cb'),
-                    \ "in_io": "null",
-                    \ "out_io": "pipe", "out_mode": "nl",
-                    \ "err_io": "out", "err_mode": "nl",
-                    \ "cwd": bindir}
-        let j = job_start(prg, opt)
-        let isfail = job_status(j)
-        if isfail != 'fail'
-            call setqflist([], ' ', {'title': '[uCMake]' . job_id . ': ' .
-                        \ s:step_compile})
-            if (g:ucmake_open_quickfix_window)
-                copen
-            endif
-            let id = getqflist({'id': 0}).id
-            let id = getqflist({'id': 0}).id
-            call s:set_ctx(job_id, 'job', j)
-            call s:set_ctx(job_id, 'qfid', id)
-            call s:msg('Compling', b:ucmake_project_name,
-                        \ 'with type of "'. typ . '"...')
-        else
-            unlet s:ctx[job_id]
-        endif
+        call s:run(job_id, prg, s:phase_compile, bindir)
     endfor
 endfunction
 
