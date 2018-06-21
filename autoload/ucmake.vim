@@ -53,7 +53,7 @@ function! s:warning(msg, ...) abort
 endfunction
 
 function! s:normalize_cmd(lst) abort
-    if has('win32') || has('win64')
+    if has('win32')
         return join(a:lst)
     else
         let r = []
@@ -106,7 +106,7 @@ function! s:link_compilation_database() abort
     elseif filereadable(target)
         return
     endif
-    if has("win64") || has("win32")
+    if has("win32")
         exec "mklink" fnameescape(from) fnameescape(target)
     else
         let cmd = "ln -s " . fnameescape(from) . " " . fnameescape(target)
