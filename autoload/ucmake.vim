@@ -12,6 +12,10 @@ let s:phase_config = "Config"
 let s:phase_compile = "Compile"
 let s:ctx = {}
 
+function! s:apply_type_macro(string, type) abort
+    return substitute(a:string, '{build_type}', a:type, 'g')
+endfunction
+
 function! s:set_ctx(id, key, value) abort
     if !exists("s:ctx[a:id]")
         let s:ctx[a:id] = {}
@@ -19,12 +23,14 @@ function! s:set_ctx(id, key, value) abort
     let s:ctx[a:id][a:key] = a:value
 endfunction
 
-function! s:set_buffer_ctx(id) abort
+function! s:set_buffer_ctx(id, typ) abort
     call s:set_ctx(a:id, 'source_tree_root', b:ucmake_source_tree_root)
     call s:set_ctx(a:id, 'project_name', b:ucmake_project_name)
     call s:set_ctx(a:id, 'top_cmakelists', b:ucmake_top_cmakelists)
-    call s:set_ctx(a:id, 'binary_dir', b:ucmake_binary_dir)
-    call s:set_ctx(a:id, 'compile_commands', b:ucmake_compile_commands)
+    call s:set_ctx(a:id, 'binary_dir',
+                \ s:apply_type_macro(b:ucmake_binary_dir, a:typ))
+    call s:set_ctx(a:id, 'compile_commands',
+                \ s:apply_type_macro(b:ucmake_compile_commands, a:typ))
 endfunction
 
 function! s:get_ctx(id, key) abort
@@ -70,10 +76,6 @@ function! s:normalize_cmd(lst) abort
     endif
 endfunction
 
-function! s:apply_type_macro(string, type) abort
-    return substitute(a:string, '{build_type}', a:type, 'g')
-endfunction
-
 function! s:make_dir(dir) abort
     let p = resolve(a:dir)
     if !isdirectory(p)
@@ -90,15 +92,13 @@ function! s:make_dir(dir) abort
     endif
 endfunction
 
-function! s:link_compilation_database() abort
-    let type = g:ucmake_active_config_types[0]
-    let bindir = s:apply_type_macro(s:get_ctx(type, 'binary_dir'), type)
-    let from = bindir . '/' . g:ucmake_compilation_database_name
+function! s:link_compilation_database(id, bindir) abort
+    let from = a:bindir . '/' . g:ucmake_compilation_database_name
     if !filereadable(from)
         call s:warning('Can not find compilation database', from)
         return
     endif
-    let target = s:apply_type_macro(s:get_ctx(type, 'compile_commands'), type)
+    let target = s:get_ctx(a:id, 'compile_commands')
     if isdirectory(target)
         if filereadable(target . '/' . g:ucmake_compilation_database_name)
             return
@@ -130,25 +130,29 @@ function! s:callback(ch, txt) abort
 endfunction
 
 function! s:exit_cb(job, code) abort
+    let index=0
     for key in keys(s:ctx)
+        let index += 1
         if a:job is s:get_ctx(key, 'job')
             let phase = s:get_ctx(key, 'phase')
             if phase ==# s:phase_config &&
-                        \ g:ucmake_enable_link_compilation_database &&
-                        \ key ==# g:ucmake_active_config_types[0]
-                call s:link_compilation_database()
+                        \ g:ucmake_enable_link_compilation_database ==? 'ON'  &&
+                        \ index == 1
+                call s:link_compilation_database(key,
+                            \ s:get_ctx(key, 'binary_dir'))
             endif
             call setqflist([], 'a', {'id': s:get_ctx(key, 'qfid'), 'items':
                         \ [{'text': 'Job exited with code ' . a:code}]})
             cbottom
             unlet s:ctx[key]
+            break
         endif
     endfor
 endfunction
 
-function! s:run(job_id, prg, phase, cwd) abort
+function! s:run(job_id, typ, prg, phase, cwd) abort
     let cm = s:normalize_cmd(a:prg)
-    call s:set_buffer_ctx(a:job_id)
+    call s:set_buffer_ctx(a:job_id, a:typ)
     call s:set_ctx(a:job_id, 'phase', a:phase)
     let opt = {"callback": function('s:callback'),
                 \ "exit_cb": function('s:exit_cb'),
@@ -203,7 +207,7 @@ function! ucmake#CmakeConfig(args) abort
         let bindir = s:apply_type_macro(b:ucmake_binary_dir, typ)
         call s:make_dir(bindir)
         let cm += ['"-B' . bindir . '"']
-        call s:run(job_id, cm, s:phase_config, bindir)
+        call s:run(job_id, typ, cm, s:phase_config, bindir)
     endfor
 endfunction
 
@@ -222,7 +226,7 @@ function! ucmake#CmakeCompile(args) abort
             let prg += ["--"]
             let prg += split(a:args)
         endif
-        call s:run(job_id, prg, s:phase_compile, bindir)
+        call s:run(job_id, typ, prg, s:phase_compile, bindir)
     endfor
 endfunction
 

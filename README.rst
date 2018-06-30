@@ -44,8 +44,8 @@ uCMake.vim provides several commands to make it easier to use cmake in vim:
   Additional make options such as ``-j4`` should be appended directly,
   such as ``:make test -j4`` .
 
-All these commands will create a quickfix list for their own.
-To switch betweens use commands such as ``:col`` ``:cnew`` ``:chi`` .
+Every commands above will create one quickfix list of their own.
+To switch between these lists use commands such as ``:col`` ``:cnew`` ``:chi`` .
 
 *******
 Options

@@ -92,7 +92,11 @@ function! s:setup(path) abort
     if root !~ '^[/\\]'
         let root = getcwd() . '/' . root
     endif
-    let b:ucmake_source_tree_root = fnamemodify(root, ':p:h:h')
+    if isdirectory(root)
+        let b:ucmake_source_tree_root = fnamemodify(root, ':p:h:h')
+    else
+        let b:ucmake_source_tree_root = fnamemodify(root, ':p:h')
+    endif
     let b:ucmake_project_name = fnamemodify(b:ucmake_source_tree_root, ':t')
 
     let top = findfile(g:ucmake_cmakelists_file,
@@ -131,10 +135,10 @@ endfunction
 augroup ucmake
     autocmd!
     autocmd BufNewFile,BufReadPost * call s:setup(expand('%:p'))
-    autocmd FileType netrw 
-            \ call s:setup(fnamemodify(get(b:, 'netrw_curdir', @%), ':p'))
+    " autocmd FileType netrw 
+    "         \ call s:setup(fnamemodify(get(b:, 'netrw_curdir', @%), ':p'))
     autocmd VimEnter *
             \ if expand('<amatch>')==''|call s:setup(getcwd())|endif
-    autocmd CmdWinEnter * call s:setup(expand('#:p'))
+    " autocmd CmdWinEnter * call s:setup(expand('#:p'))
 augroup END
 
