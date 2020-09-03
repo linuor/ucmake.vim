@@ -46,6 +46,8 @@ if !exists("g:ucmake_cache_entries")
     let g:ucmake_cache_entries = {}
 endif
 
+let g:ucmake_disabled = get(g:, 'ucmake_disabled', 0)
+
 function! s:shellslash(path) abort
     if &shell =~? 'cmd' || exists('+shellslash') && !&shellslash
         return tr(a:path, '\', '/')
@@ -71,6 +73,9 @@ function! s:apply_buffer_macro(string) abort
 endfunction
 
 function! s:setup(path) abort
+    if g:ucmake_disabled 
+        return
+    endif
     let path = s:shellslash(a:path)
     if isdirectory(path)
         let path = fnamemodify(path, ':p:s?/$??')
@@ -141,4 +146,6 @@ augroup ucmake
             \ if expand('<amatch>')==''|call s:setup(getcwd())|endif
     " autocmd CmdWinEnter * call s:setup(expand('#:p'))
 augroup END
+
+command! UCmakeToggleDisabled :let g:ucmake_disabled=!g:ucmake_disabled
 
